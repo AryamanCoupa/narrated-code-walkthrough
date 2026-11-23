@@ -5,7 +5,7 @@ The root has `version: 1`, `title`, `summary`, `audience`, `minutes`, `files` an
 and hyphens, starting with a letter. See `../assets/example/guide.json`.
 
 Each file has a repository-relative `path`, `purpose`, optional `details` and
-`group`. Source is read from the selected Git revision, without importing it.
+`group`. Source is read as UTF-8 from the selected Git revision, without importing it.
 `--base` supplies PR diffs and removed-file source; `--worktree` explicitly opts
 into local source and labels it accordingly.
 

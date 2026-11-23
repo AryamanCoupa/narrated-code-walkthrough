@@ -85,7 +85,7 @@ def load_guide(path):
     return guide
 
 def git(repo,*args,optional=False):
-    result=subprocess.run(['git',*args],cwd=repo,text=True,capture_output=True)
+    result=subprocess.run(['git',*args],cwd=repo,text=True,encoding='utf-8',capture_output=True)
     if result.returncode:
         if optional:return None
         raise ValueError(result.stderr.strip() or 'Git command failed')
@@ -167,7 +167,7 @@ def build_data(guide,repo,revision='HEAD',base=None,worktree=False,audio=None):
 def render_html(data):
     content=(ASSETS/'walkthrough.html').read_text(encoding='utf-8')
     payload=json.dumps(data,ensure_ascii=False).replace('<','\\u003c')
-    values={'__STYLE__':(ASSETS/'styles.css').read_text(),'__DATA__':payload,'__SCRIPT__':(ASSETS/'walkthrough.js').read_text()}
+    values={'__STYLE__':(ASSETS/'styles.css').read_text(encoding='utf-8'),'__DATA__':payload,'__SCRIPT__':(ASSETS/'walkthrough.js').read_text(encoding='utf-8')}
     for key in values:require(content.count(key)==1,'Invalid renderer template marker '+key)
     return re.sub(r'__(?:STYLE|DATA|SCRIPT)__',lambda match:values[match.group(0)],content)
 

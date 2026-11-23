@@ -1,10 +1,12 @@
 """Real temporary Git/source/audio checks; no network or application execution."""
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 import wave
@@ -84,6 +86,29 @@ class BuildTests(unittest.TestCase):
                         for reference in references:
                             if reference.get('file'):self.assertIn(reference['file'],paths)
                     self.assertEqual(self.guide['files'][0]['path'],spelling)
+
+    def test_unicode_source_and_diff_build_under_c_locale(self):
+        base=self.git('rev-parse','HEAD').strip()
+        source=(self.repo/'app.py').read_text(encoding='utf-8')+'# café — こんにちは\n'
+        (self.repo/'app.py').write_text(source,encoding='utf-8');self.commit()
+        guide_path=self.root/'guide.json'
+        guide_path.write_text(json.dumps(self.guide),encoding='utf-8')
+        env={**os.environ,'LC_ALL':'C','LANG':'C','PYTHONUTF8':'0','PYTHONCOERCECLOCALE':'0'}
+        for worktree in (False,True):
+            with self.subTest(worktree=worktree):
+                output=self.root/('local.html' if worktree else 'committed.html')
+                command=[sys.executable,'-B',str(Path(build.__file__).resolve()),
+                         '--guide',str(guide_path),'--repo',str(self.repo),'--base',base,
+                         '--output',str(output)]
+                if worktree:command.append('--worktree')
+                result=subprocess.run(command,env=env,capture_output=True,encoding='utf-8')
+                self.assertEqual(result.returncode,0,result.stderr)
+                html=output.read_text(encoding='utf-8')
+                payload=re.search(r'<script type="application/json" id="data">(.*?)</script>',html,re.S).group(1)
+                data=json.loads(payload)
+                self.assertEqual(data['files'][0]['source'],source)
+                if not worktree:self.assertIn('# café — こんにちは',data['files'][0]['diff'])
+                self.assertIn('const DATA=JSON.parse',html)
 
     def test_audio_is_embedded_and_stale_or_overlapping_cues_fail(self):
         guide=self.load();audio=self.root/'tone.wav'
