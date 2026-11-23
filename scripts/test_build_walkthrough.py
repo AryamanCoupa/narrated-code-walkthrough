@@ -60,6 +60,31 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(json.loads(payload)['files'][0]['source'],source)
         self.assertNotIn('</script><img',html);self.assertEqual(html.count('const DATA=JSON.parse'),1)
 
+    def test_loaded_file_paths_are_canonical_and_alias_duplicates_fail(self):
+        for spelling in ('app.py','./app.py','.//./app.py'):
+            with self.subTest(path=spelling):
+                self.guide['files'][0]['path']=spelling
+                self.assertEqual(self.load()['files'][0]['path'],'app.py')
+        duplicate=deepcopy(self.guide['files'][0]);duplicate['path']='app.py'
+        self.guide['files'].append(duplicate)
+        with self.assertRaisesRegex(ValueError,'Duplicate source'):self.load()
+
+    def test_exported_file_paths_match_snippet_flow_and_narration_references(self):
+        # Exercise build_data directly too, without relying on load_guide mutation.
+        for spelling in ('./app.py','.//./app.py'):
+            self.guide['files'][0]['path']=spelling
+            for worktree in (False,True):
+                with self.subTest(path=spelling,worktree=worktree):
+                    data=build.build_data(self.guide,self.repo,worktree=worktree)
+                    paths={file['path'] for file in data['files']}
+                    self.assertEqual(paths,{'app.py'})
+                    for chapter in data['chapters']:
+                        references=[*chapter['blocks'],*chapter.get('narration',[])]
+                        references.extend(item for block in chapter['blocks'] for item in block.get('items',[]))
+                        for reference in references:
+                            if reference.get('file'):self.assertIn(reference['file'],paths)
+                    self.assertEqual(self.guide['files'][0]['path'],spelling)
+
     def test_audio_is_embedded_and_stale_or_overlapping_cues_fail(self):
         guide=self.load();audio=self.root/'tone.wav'
         with wave.open(str(audio),'wb') as output:

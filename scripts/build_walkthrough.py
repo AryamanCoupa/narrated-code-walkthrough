@@ -45,6 +45,7 @@ def load_guide(path):
     paths=set()
     for file in guide['files']:
         path=relative(file['path']);require(path not in paths,'Duplicate source '+path);paths.add(path)
+        file['path']=path
         text(file.get('purpose'),'file purpose')
     require(isinstance(guide.get('chapters'),list) and guide['chapters'],'Add chapters')
     ids=set()
@@ -127,7 +128,7 @@ def build_data(guide,repo,revision='HEAD',base=None,worktree=False,audio=None):
                 source=git(repo,'show',base_sha+':'+path,optional=True);deleted=True
             require(source is not None,'Missing committed source: '+path)
         require('\0' not in source,'Binary source is not supported: '+path)
-        files[path]={**item,'source':source,'deleted':deleted,'group':item.get('group','Source'),
+        files[path]={**item,'path':path,'source':source,'deleted':deleted,'group':item.get('group','Source'),
                      'diff':git(repo,'diff','--no-ext-diff','--unified=4',base_sha,head,'--',path) if base_sha and not worktree else ''}
     for chapter in data['chapters']:
         for block in chapter['blocks']:

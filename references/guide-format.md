@@ -9,6 +9,11 @@ Each file has a repository-relative `path`, `purpose`, optional `details` and
 `--base` supplies PR diffs and removed-file source; `--worktree` explicitly opts
 into local source and labels it accordingly.
 
+File declarations normalize harmless path aliases such as `./app.py` to `app.py`
+in the loaded guide and exported payload. Use the canonical path (`app.py`) in
+snippet, flow-item and narration `file` references. Aliases of the same file are
+rejected as duplicate declarations; traversal paths remain invalid.
+
 Each chapter has `id`, `title`, `minutes`, `summary`, `blocks`, optional `narration`
 and optional `quiz`. Blocks have a unique `id` within the chapter and a `type`:
 
