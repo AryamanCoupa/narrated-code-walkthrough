@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "title": "A request, from input to response",
+  "summary": "A small example of how to explain a code flow.",
+  "audience": "A developer new to this code",
+  "minutes": 3,
+  "files": [{"path":"app.py","purpose":"Accept a message, clean it and return a reply.","details":"This is a fictional teaching example. It does not contact a service.","group":"Request flow"}],
+  "chapters": [
+    {
+      "id":"request", "title":"Follow one message", "minutes":1,
+      "summary":"Start with what arrives and what the user gets back.",
+      "blocks":[
+        {"id":"overview","type":"flow","title":"Three small steps","items":[
+          {"id":"receive","title":"Receive","text":"A caller supplies a message.","file":"app.py","anchor":"def handle_request(message):"},
+          {"id":"clean","title":"Clean","text":"Remove spaces from the beginning and end.","file":"app.py","anchor":"def normalize(message):"},
+          {"id":"reply","title":"Reply","text":"Put the cleaned message in a reply object."}
+        ]},
+        {"id":"example","type":"text","title":"A small example","text":"If the message is ' hello ', the reply contains 'hello'. Only the surrounding spaces are removed."}
+      ],
+      "narration":[
+        {"label":"The incoming message","text":"A caller sends a message. The request handler receives it. We will follow that message through three small steps.","target":"overview","node":"receive"},
+        {"label":"An example","text":"For example, a message with spaces around hello becomes hello without those surrounding spaces.","target":"example"}
+      ]
+    },
+    {
+      "id":"code", "title":"Read the important lines", "minutes":2,
+      "summary":"Read what each line does before worrying about its syntax.",
+      "blocks":[
+        {"id":"handler","type":"code","title":"The request handler","file":"app.py","anchor":"def handle_request(message):","lines":4,"explanation":"The function receives a message, asks normalize to clean it, then returns the result."},
+        {"id":"cleaner","type":"code","title":"The helper","file":"app.py","anchor":"def normalize(message):","lines":2,"explanation":"strip removes spaces at the beginning and end. It does not remove spaces inside the message."}
+      ],
+      "narration":[
+        {"label":"Receive the input","text":"This function receives the message as its input.","file":"app.py","anchor":"def handle_request(message):"},
+        {"label":"Call the helper","text":"This line passes the message to the cleaning helper. The cleaned value is stored for the next line.","file":"app.py","anchor":"cleaned = normalize(message)"},
+        {"label":"Return the reply","text":"The next line returns the cleaned value inside a reply object.","file":"app.py","anchor":"return {\"reply\": cleaned}"},
+        {"label":"Remove surrounding spaces","text":"Inside the helper, strip removes only the surrounding spaces. This is the final step in our example.","file":"app.py","anchor":"return message.strip()"}
+      ],
+      "quiz":{"question":"Where are the surrounding spaces removed?","choices":["In normalize","In the caller"],"answer":0,"explanation":"normalize calls strip to remove the surrounding spaces."}
+    }
+  ]
+}

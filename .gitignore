@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+.env
+.env.*
+/output/
+/voice/
+/dist/
+*.wav
+*.mp3
+*.mp4
+*.onnx
+*.bin
+*.pem
+*.key

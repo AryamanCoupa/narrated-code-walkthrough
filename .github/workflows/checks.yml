@@ -1,0 +1,28 @@
+name: Standalone skill checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test the offline builder
+        run: python3 -B scripts/test_build_walkthrough.py
+      - name: Check browser script syntax
+        run: node --check assets/walkthrough.js
+      - name: Test the public-bundle check
+        run: python3 -B scripts/test_public_bundle.py
+      - name: Check the public bundle
+        run: python3 -B scripts/check_public_bundle.py
