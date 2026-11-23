@@ -9,13 +9,14 @@ const smooth=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?'instant
 let current=0,cueIndex=-1,started=false,selectedFile=DATA.files[0].path,returnFocus=null;
 let reviewed=new Set();try{reviewed=new Set(JSON.parse(localStorage.getItem('code-guide:'+DATA.id)||'[]'));}catch{}
 const audio=$('#audio');
-function codeLines(source,start=1,first=0,last=first){return source.split('\n').map((line,i)=>`<div class="line${start+i>=first&&start+i<=last?' selected':''}${line.startsWith('+')&&!line.startsWith('+++')?' added':''}${line.startsWith('-')&&!line.startsWith('---')?' removed':''}" data-line="${start+i}"><span class="ln" aria-hidden="true">${start+i}</span><span class="src">${esc(line)||' '}</span></div>`).join('');}
+function codeLines(source,start=1,first=0,last=first,diff=false){return source.split('\n').map((line,i)=>`<div class="line${start+i>=first&&start+i<=last?' selected':''}${diff&&line.startsWith('+')&&!line.startsWith('+++')?' added':''}${diff&&line.startsWith('-')&&!line.startsWith('---')?' removed':''}" data-line="${start+i}"><span class="ln" aria-hidden="true">${start+i}</span><span class="src">${esc(line)||' '}</span></div>`).join('');}
 function codeCard(file,start,end,explanation='',context=false){const source=files.get(file).source.split('\n');const top=context?Math.max(1,start-7):start;const bottom=context?Math.min(source.length,Math.max(top+35,end+7)):end;return `<section class="code-card" data-file="${esc(file)}" data-start="${top}" data-end="${bottom}"><div class="code-bar"><span>${esc(file)} · L${start}${end!==start?'–'+end:''}</span><button data-open-file="${esc(file)}" data-line="${start}" data-end-line="${end}">Inspect full file</button></div><div class="code-scroll" tabindex="0">${codeLines(source.slice(top-1,bottom).join('\n'),top,start,end)}</div>${explanation?'<div class="code-caption">'+esc(explanation)+'</div>':''}</section>`;}
+function flowDetail(node){return prose(node.text)+(node.file?'<button class="file-link" data-open-file="'+esc(node.file)+'" data-line="'+node.line+'" data-end-line="'+node.end_line+'">Inspect related source</button>':'');}
 function renderBlock(block){let body='';const title=block.title?'<h2>'+esc(block.title)+'</h2>':'';
   if(block.type==='text')body=prose(block.text);
   if(block.type==='code')body=codeCard(block.file,block.line,block.end_line,block.explanation);
   if(block.type==='cards')body='<div class="grid2">'+block.items.map(item=>'<div class="card"><h3>'+esc(item.title)+'</h3>'+prose(item.text)+'</div>').join('')+'</div>';
-  if(block.type==='flow')body='<div class="flow">'+block.items.map((item,i)=>`<button class="flow-node" data-flow-block="${block.id}" data-node="${item.id}" aria-pressed="${i===0}"><span class="number">${i+1}</span><b>${esc(item.title)}</b></button>`).join('')+`</div><div class="flow-detail" data-flow-detail="${block.id}">${prose(block.items[0].text)}</div>`;
+  if(block.type==='flow')body='<div class="flow">'+block.items.map((item,i)=>`<button class="flow-node" data-flow-block="${block.id}" data-node="${item.id}" aria-pressed="${i===0}"><span class="number">${i+1}</span><b>${esc(item.title)}</b></button>`).join('')+`</div><div class="flow-detail" data-flow-detail="${block.id}">${flowDetail(block.items[0])}</div>`;
   return `<section class="block" data-block="${block.id}">${title}${body}</section>`;
 }
 function renderNav(){
@@ -51,7 +52,7 @@ function focusCode(reference,label){
 function selectNode(blockId,nodeId){
   const block=DATA.chapters[current].blocks.find(block=>block.id===blockId);const node=block.items.find(node=>node.id===nodeId);
   const container=document.querySelector('[data-block="'+blockId+'"]');container.querySelectorAll('[data-node]').forEach(button=>button.setAttribute('aria-pressed',button.dataset.node===nodeId));
-  container.querySelector('[data-flow-detail]').innerHTML=prose(node.text)+(node.file?'<button class="file-link" data-open-file="'+esc(node.file)+'" data-line="'+node.line+'" data-end-line="'+node.end_line+'">Inspect related source</button>':'');
+  container.querySelector('[data-flow-detail]').innerHTML=flowDetail(node);
 }
 function follow(force=false){
   const chapter=DATA.chapters[current];if(!chapter.audio||(!started&&!force))return;
@@ -70,7 +71,7 @@ function follow(force=false){
 }
 async function play(){try{await audio.play();$('#audio-status').textContent='';}catch{$('#audio-status').textContent='Press Play to start this chapter.';}}
 function fileList(){const query=$('#search').value.toLowerCase();$('#files').innerHTML=DATA.files.filter(file=>(file.path+' '+file.purpose+' '+(file.details||'')).toLowerCase().includes(query)).map(file=>`<button class="file-item${file.path===selectedFile?' active':''}" data-file-select="${esc(file.path)}"><span>${esc(file.path)}</span>${file.deleted?'<b class="file-status">Removed</b>':''}</button>`).join('')||'<p class="empty">No matching files</p>';}
-function sourceFile(path,line=1,end=line,diff=false){selectedFile=path;const file=files.get(path);$('#file-explanation').innerHTML='<h3>'+esc(path)+'</h3><p><b>'+esc(file.purpose)+'</b></p>'+prose(file.details||'')+(file.deleted?'<p class="subtle">Removed file: source shown from the selected base.</p>':'');$('#diff').disabled=!file.diff;$('#source').innerHTML=codeLines(diff?file.diff:file.source,1,diff?0:line,end);$('#source').scrollTop=0;if(!diff)scrollCode($('#source'),line);fileList();}
+function sourceFile(path,line=1,end=line,diff=false){selectedFile=path;const file=files.get(path);$('#file-explanation').innerHTML='<h3>'+esc(path)+'</h3><p><b>'+esc(file.purpose)+'</b></p>'+prose(file.details||'')+(file.deleted?'<p class="subtle">Removed file: source shown from the selected base.</p>':'');$('#diff').disabled=!file.diff;$('#source').innerHTML=codeLines(diff?file.diff:file.source,1,diff?0:line,diff?0:end,diff);$('#source').scrollTop=0;if(!diff)scrollCode($('#source'),line);fileList();}
 function openSource(path,line=1,end=line){audio.pause();returnFocus=document.activeElement;$('#source-dialog').showModal();sourceFile(path,line,end);}
 document.addEventListener('click',event=>{
   const button=event.target.closest('button');if(!button)return;

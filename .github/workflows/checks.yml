@@ -22,6 +22,8 @@ jobs:
         run: python3 -B scripts/test_build_walkthrough.py
       - name: Check browser script syntax
         run: node --check assets/walkthrough.js
+      - name: Test source rendering and flow links
+        run: node --test scripts/test_renderer.cjs
       - name: Test the public-bundle check
         run: python3 -B scripts/test_public_bundle.py
       - name: Check the public bundle

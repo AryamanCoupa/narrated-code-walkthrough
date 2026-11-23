@@ -77,7 +77,8 @@ Run the bundle check before committing or pushing. A CI check runs after upload 
 python3 -B scripts/test_build_walkthrough.py
 python3 -B scripts/test_public_bundle.py
 node --check assets/walkthrough.js
+node --test scripts/test_renderer.cjs
 python3 -B scripts/check_public_bundle.py
 ```
 
-The tests cover source snapshots, explicit local edits, removed files, source references, HTML escaping, embedded audio, and timing validation. GitHub Actions runs the same checks. Browser testing remains necessary for real playback, seeking, internal code scrolling, keyboard use, and narrow screens.
+The tests cover source snapshots, explicit local edits, removed files, source references, HTML escaping, embedded audio, timing validation, source versus diff colors, and flow-node source links. GitHub Actions runs the same checks. Browser testing remains necessary for real playback, seeking, internal code scrolling, keyboard use, and narrow screens.
