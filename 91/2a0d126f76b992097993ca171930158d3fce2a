@@ -1,0 +1,27 @@
+SKILL.md
+  s_ef22e5664a5914::t_21f2c9e2d7786e 39-51,88
+.github/workflows/checks.yml
+  s_ef22e5664a5914::t_21f2c9e2d7786e 25-26
+README.md
+  s_ef22e5664a5914::t_21f2c9e2d7786e 80,84
+scripts/test_renderer.cjs
+  s_ef22e5664a5914::t_246061c767f0b4 1-86
+assets/walkthrough.js
+  s_ef22e5664a5914::t_21f2c9e2d7786e 12,14,19,55,74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "912a0d126f76b992097993ca171930158d3fce2a",
+  "prompts": {},
+  "sessions": {
+    "s_ef22e5664a5914": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ea9d-1656-75a3-b86c-be1e504932c1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "AryamanCoupa <188454952+AryamanCoupa@users.noreply.github.com>"
+    }
+  }
+}
