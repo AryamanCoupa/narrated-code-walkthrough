@@ -121,6 +121,8 @@ def build_data(guide,repo,revision='HEAD',base=None,worktree=False,audio=None):
         if worktree:
             source_path=(repo/path).resolve()
             require(source_path.is_relative_to(repo),'Source symlink leaves repository')
+            # A link with an ordinary name must not expose an excluded in-repository target.
+            relative(source_path.relative_to(repo).as_posix())
             source=source_path.read_text(encoding='utf-8')
         else:
             source=git(repo,'show',head+':'+path,optional=True)
