@@ -20,7 +20,7 @@ def main():
         guide=load_guide(args.guide)
         require(args.model.is_file() and args.voices.is_file(),'Supply existing local model and voice files')
         require(1<=args.threads<=32,'threads must be between 1 and 32')
-        require(all(c.get('narration') for c in guide['chapters']),'Every chapter needs narration segments')
+        require(any(c.get('narration') for c in guide['chapters']),'At least one chapter needs narration segments')
         encoder=shutil.which(args.ffmpeg) if args.format=='mp3' else None
         require(args.format=='wav' or encoder,'Install ffmpeg or use --format wav')
         import numpy as np
@@ -38,7 +38,7 @@ def main():
         model_meta=[str(args.model.resolve()),args.model.stat().st_size,args.model.stat().st_mtime_ns,
                     str(args.voices.resolve()),args.voices.stat().st_size,args.voices.stat().st_mtime_ns]
         result={'version':1,'script_hash':script_hash(guide),'voice':args.voice,'engine':'Local Kokoro','chapters':{}}
-        for chapter in guide['chapters']:
+        for chapter in (c for c in guide['chapters'] if c.get('narration')):
             segments=chapter['narration'];digest=hashlib.sha256(json.dumps([args.voice,args.format,model_meta,segments],sort_keys=True).encode()).hexdigest()
             existing=records.get(chapter['id'],{})
             if existing.get('cache_hash')==digest and (out/existing['file']).is_file():

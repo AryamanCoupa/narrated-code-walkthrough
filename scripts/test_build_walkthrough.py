@@ -155,4 +155,18 @@ class BuildTests(unittest.TestCase):
         wrong=deepcopy(manifest);wrong['chapters']['code']['cues'][1]['start']=0;path.write_text(json.dumps(wrong))
         with self.assertRaisesRegex(ValueError,'Overlapping'):build.build_data(guide,self.repo,audio=path)
 
+    def test_audio_build_allows_text_only_chapters(self):
+        del self.guide['chapters'][0]['narration'];guide=self.load();audio=self.root/'tone.wav'
+        with wave.open(str(audio),'wb') as output:
+            output.setparams((1,2,8000,0,'NONE','not compressed'));output.writeframes(b'\0\0'*8000)
+        code=guide['chapters'][1]
+        manifest={'script_hash':build.script_hash(guide),'chapters':{code['id']:{'file':'tone.wav','seconds':1,'cues':[
+            {'segment':i,'start':i*.1,'end':i*.1+.09} for i in range(len(code['narration']))]}}}
+        path=self.root/'narration.json';path.write_text(json.dumps(manifest))
+        data=build.build_data(guide,self.repo,audio=path)
+        self.assertNotIn('audio',data['chapters'][0]);self.assertTrue(data['chapters'][1]['audio'].startswith('data:audio/'))
+        del self.guide['chapters'][1]['narration'];guide=self.load()
+        manifest={'script_hash':build.script_hash(guide),'chapters':{}};path.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError,'at least one narrated'):build.build_data(guide,self.repo,audio=path)
+
 if __name__=='__main__':unittest.main(verbosity=2)
