@@ -15,7 +15,8 @@ snippet, flow-item and narration `file` references. Aliases of the same file are
 rejected as duplicate declarations; traversal paths remain invalid.
 
 Each chapter has `id`, `title`, `minutes`, `summary`, `blocks`, optional `narration`
-and optional `quiz`. Blocks have a unique `id` within the chapter and a `type`:
+and optional `quiz`. Chapters without `narration` stay text-only: audio generation
+skips them and the page hides the player there. Audio needs at least one narrated chapter. Blocks have a unique `id` within the chapter and a `type`:
 
 | Type | Fields |
 |---|---|

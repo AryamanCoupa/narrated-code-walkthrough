@@ -39,6 +39,34 @@ class BuildTests(unittest.TestCase):
         self.assertTrue(local['revision'].startswith('working tree'))
         self.assertEqual(before,self.git('status','--porcelain'))
 
+    def test_worktree_symlinks_apply_exclusions_to_resolved_target(self):
+        marker='HARMLESS_EXCLUDED_FIXTURE_MARKER'
+        source=(self.repo/'app.py').read_text(encoding='utf-8')
+        guide_path=self.root/'guide.json';guide_path.write_text(json.dumps(self.guide),encoding='utf-8')
+        def export(name):
+            output=self.root/(name+'.html')
+            result=subprocess.run([sys.executable,'-B',str(Path(build.__file__).resolve()),'--guide',str(guide_path),
+                                   '--repo',str(self.repo),'--worktree','--output',str(output)],capture_output=True,encoding='utf-8')
+            return result,output
+        def link(target):
+            (self.repo/'app.py').unlink();(self.repo/'app.py').symlink_to(target)
+        (self.repo/'src').mkdir();(self.repo/'src/real_app.py').write_text(source+'# allowed fixture\n',encoding='utf-8')
+        link('src/real_app.py')
+        result,output=export('allowed')
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertIn('# allowed fixture',output.read_text(encoding='utf-8'))
+        for target in ('.env.local','secrets/server.key'):
+            with self.subTest(target=target):
+                excluded=self.repo/target;excluded.parent.mkdir(exist_ok=True)
+                excluded.write_text(source+'# '+marker+'\n',encoding='utf-8');link(target)
+                with self.assertRaisesRegex(ValueError,'environment/private-key'):
+                    build.build_data(self.load(),self.repo,worktree=True)
+                result,output=export('excluded-'+excluded.name)
+                self.assertNotEqual(result.returncode,0)
+                self.assertIn('environment/private-key',result.stderr)
+                self.assertNotIn(marker,result.stdout+result.stderr)
+                self.assertFalse(output.exists() and marker in output.read_text(encoding='utf-8'))
+
     def test_anchors_ranges_targets_and_paths_are_checked(self):
         guide=self.load();guide['chapters'][1]['blocks'][0]['anchor']='return'
         with self.assertRaisesRegex(ValueError,'exactly once'):build.build_data(guide,self.repo)
@@ -126,5 +154,19 @@ class BuildTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'does not match'):build.build_data(guide,self.repo,audio=path)
         wrong=deepcopy(manifest);wrong['chapters']['code']['cues'][1]['start']=0;path.write_text(json.dumps(wrong))
         with self.assertRaisesRegex(ValueError,'Overlapping'):build.build_data(guide,self.repo,audio=path)
+
+    def test_audio_build_allows_text_only_chapters(self):
+        del self.guide['chapters'][0]['narration'];guide=self.load();audio=self.root/'tone.wav'
+        with wave.open(str(audio),'wb') as output:
+            output.setparams((1,2,8000,0,'NONE','not compressed'));output.writeframes(b'\0\0'*8000)
+        code=guide['chapters'][1]
+        manifest={'script_hash':build.script_hash(guide),'chapters':{code['id']:{'file':'tone.wav','seconds':1,'cues':[
+            {'segment':i,'start':i*.1,'end':i*.1+.09} for i in range(len(code['narration']))]}}}
+        path=self.root/'narration.json';path.write_text(json.dumps(manifest))
+        data=build.build_data(guide,self.repo,audio=path)
+        self.assertNotIn('audio',data['chapters'][0]);self.assertTrue(data['chapters'][1]['audio'].startswith('data:audio/'))
+        del self.guide['chapters'][1]['narration'];guide=self.load()
+        manifest={'script_hash':build.script_hash(guide),'chapters':{}};path.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError,'at least one narrated'):build.build_data(guide,self.repo,audio=path)
 
 if __name__=='__main__':unittest.main(verbosity=2)

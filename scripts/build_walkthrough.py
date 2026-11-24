@@ -121,6 +121,8 @@ def build_data(guide,repo,revision='HEAD',base=None,worktree=False,audio=None):
         if worktree:
             source_path=(repo/path).resolve()
             require(source_path.is_relative_to(repo),'Source symlink leaves repository')
+            # A link with an ordinary name must not expose an excluded in-repository target.
+            relative(source_path.relative_to(repo).as_posix())
             source=source_path.read_text(encoding='utf-8')
         else:
             source=git(repo,'show',head+':'+path,optional=True)
@@ -140,9 +142,11 @@ def build_data(guide,repo,revision='HEAD',base=None,worktree=False,audio=None):
     if audio:
         manifest_path=Path(audio).resolve();manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
         require(manifest.get('script_hash')==script_hash(guide),'Narration does not match this guide; regenerate audio')
-        for chapter in data['chapters']:
-            segments=chapter.get('narration',[])
-            require(bool(segments),'Every narrated chapter needs segments')
+        # Narration is optional per chapter; chapters without it stay text-only.
+        narrated=[chapter for chapter in data['chapters'] if chapter.get('narration')]
+        require(bool(narrated),'Audio needs at least one narrated chapter')
+        for chapter in narrated:
+            segments=chapter['narration']
             record=manifest.get('chapters',{}).get(chapter['id']);require(isinstance(record,dict),'Missing chapter audio')
             seconds=record.get('seconds');require(type(seconds) in (int,float) and math.isfinite(seconds) and seconds>0,'Invalid audio duration')
             cues=record.get('cues');require(isinstance(cues,list) and len(cues)==len(segments),'Every segment needs a timing cue')
